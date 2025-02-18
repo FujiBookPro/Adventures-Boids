@@ -1,35 +1,37 @@
 package boids;
 
-import com.raylib.Raylib.Vector2;
 import com.raylib.Raylib;
+
+import boids.Vector.Vector2;
+
 import com.raylib.Colors;
 
 import java.lang.Math;
 import java.util.List;
 
 public class Bird {
-    private static float speed = 5;
-    private static float turnSpeed = 5;
+    private static double speed = 10;
+    private static double turnSpeed = 10;
 
-    private static float separationStrength = 10;
-    private static float alignmentStrength = 10;
-    private static float cohesionStrength = 10;
+    private static double separationStrength = 10;
+    private static double alignmentStrength = 5;
+    private static double cohesionStrength = 5;
 
     private Vector2 position;
-    private float rotation;
+    public double rotation;
 
-    public Bird(Vector2 startPosition, float startRotation) {
+    public Bird(Vector2 startPosition, double startRotation) {
         position = startPosition;
         rotation = startRotation;
     }
 
     public Bird(Vector2 startPosition) {
-        this(startPosition, 0.0f);
+        this(startPosition, 0.0);
     }
 
     public static Bird random(int width, int height) {
-        Vector2 position = new Vector2().x((float)(Math.random() * width)).y((float)(Math.random() * height));
-        float rotation = (float)(Math.random() * 360);
+        Vector2 position = new Vector2(Math.random() * width, Math.random() * height);
+        double rotation = Math.random() * 360;
 
         return new Bird(position, rotation);
     }
@@ -39,11 +41,11 @@ public class Bird {
     }
 
     public void draw() {
-        Raylib.DrawPoly(position, 3, 15, rotation, Colors.WHITE);
+        Raylib.DrawPoly(position.toRaylibVector2(), 3, 15, (float)rotation, Colors.WHITE);
     }
 
     public void update(List<Bird> allBirds) {
-        float desiredRotation = separtation(allBirds) * separationStrength;
+        double desiredRotation = separtation(allBirds) * separationStrength;
         desiredRotation += alignment(allBirds) * alignmentStrength;
         desiredRotation += cohesion(allBirds) * cohesionStrength;
         desiredRotation /= separationStrength + alignmentStrength + cohesionStrength;
@@ -54,8 +56,8 @@ public class Bird {
             rotation += turnSpeed;
         }
 
-        float newX = position.x() + (float)Math.cos(rotation * Math.PI / 180) * speed;
-        float newY = position.y() + (float)Math.sin(rotation * Math.PI / 180) * speed;
+        double newX = position.x() + Math.cos(rotation * Math.PI / 180) * speed;
+        double newY = position.y() + Math.sin(rotation * Math.PI / 180) * speed;
 
         if (newX > App.WIDTH) {
             newX %= App.WIDTH;
@@ -69,30 +71,30 @@ public class Bird {
             newY += App.HEIGHT;
         }
 
-        position = new Vector2().x(newX).y(newY);
+        position = new Vector2(newX, newY);
     }
 
-    private float separtation(List<Bird> birds) {
+    private double separtation(List<Bird> birds) {
         Vector2 totalRepulsiveForce = new Vector2();
         for (Bird b : birds) {
             if (b == this) {
                 continue;
             }
-            Vector2 bToSelf = Raylib.Vector2Subtract(b.position, this.position);
-            float r = Raylib.Vector2Length(bToSelf);
+            Vector2 bToSelf = b.position.minus(this.position);
+            double r = bToSelf.magnitude();
 
-            bToSelf = Raylib.Vector2Normalize(bToSelf);
+            bToSelf = bToSelf.normalize();
 
-            Vector2 repulsiveForce = Raylib.Vector2Scale(bToSelf, 1.0f / (r * r));
-            totalRepulsiveForce = Raylib.Vector2Add(totalRepulsiveForce, repulsiveForce);
+            Vector2 repulsiveForce = bToSelf.times(1.0 / (r * r));
+            totalRepulsiveForce = totalRepulsiveForce.plus(repulsiveForce);
         }
-        float angleRadians = Raylib.Vector2Angle(totalRepulsiveForce, new Vector2().x(1.0f).y(0.0f));
+        double angleRadians = totalRepulsiveForce.angleWith(new Vector2(1.0, 0.0));
 
-        return angleRadians * 180 / (float)Math.PI;
+        return angleRadians * 180.0 / Math.PI;
     }
 
-    private float alignment(List<Bird> birds) {
-        float avgRotation = 0;
+    private double alignment(List<Bird> birds) {
+        double avgRotation = 0;
         for (Bird b : birds) {
             avgRotation += b.rotation;
         }
@@ -100,15 +102,15 @@ public class Bird {
         return avgRotation;
     }
 
-    private float cohesion(List<Bird> birds) {
+    private double cohesion(List<Bird> birds) {
         Vector2 avgPosition = new Vector2();
         for (Bird b : birds) {
-            avgPosition = Raylib.Vector2Add(avgPosition, b.position);
+            avgPosition = avgPosition.plus(b.position);
         }
-        avgPosition = Raylib.Vector2Scale(avgPosition, 1.0f / birds.size());
+        avgPosition = avgPosition.times(1.0 / birds.size());
 
-        float angleRadians = (float)Math.atan2(avgPosition.y() - position.y(), avgPosition.x() - position.x());
+        double angleRadians = Math.atan2(avgPosition.y() - position.y(), avgPosition.x() - position.x());
 
-        return angleRadians * 180 / (float)Math.PI;
+        return angleRadians * 180.0 / Math.PI;
     }
 }
