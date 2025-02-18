@@ -51,9 +51,9 @@ public class Bird {
         desiredRotation /= separationStrength + alignmentStrength + cohesionStrength;
 
         if (rotation > desiredRotation) {
-            rotation -= turnSpeed;
+            rotation -= Math.min(turnSpeed, rotation - desiredRotation);
         } else if (rotation < desiredRotation) {
-            rotation += turnSpeed;
+            rotation += Math.min(turnSpeed, desiredRotation - rotation);
         }
 
         double newX = position.x() + Math.cos(rotation * Math.PI / 180) * speed;

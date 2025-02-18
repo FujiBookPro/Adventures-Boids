@@ -10,6 +10,7 @@ public class Vector {
         public Vector2() {
             this(0, 0);
         }
+
         public Raylib.Vector2 toRaylibVector2() {
             return new Raylib.Vector2().x((float)this.x).y((float)this.y);
         }
