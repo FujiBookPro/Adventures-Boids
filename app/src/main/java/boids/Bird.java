@@ -40,8 +40,16 @@ public class Bird {
         return random(App.WIDTH, App.HEIGHT);
     }
 
-    public void draw() {
+    public void draw(boolean showDebugAnnotations) {
         Raylib.DrawPoly(position.toRaylibVector2(), 3, 15, (float)rotation, Colors.WHITE);
+
+        if (showDebugAnnotations) {
+            // show movement direction
+            // TODO: Make this code (and the main movement code) less redundant
+            float nextX = (float)(position.x() + Math.cos(rotation * Math.PI / 180) * 50);
+            float nextY = (float)(position.y() + Math.sin(rotation * Math.PI / 180) * 50);
+            Raylib.DrawLineV(position.toRaylibVector2(), new Raylib.Vector2().x(nextX).y(nextY), Colors.GREEN);
+        }
     }
 
     public void update(List<Bird> allBirds) {
@@ -80,7 +88,7 @@ public class Bird {
             if (b == this) {
                 continue;
             }
-            Vector2 bToSelf = b.position.minus(this.position);
+            Vector2 bToSelf = this.position.minus(b.position);
             double r = bToSelf.magnitude();
 
             bToSelf = bToSelf.normalize();
