@@ -11,14 +11,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Bird {
-    private static double speed = 10;
-    private static double turnSpeed = 10;
+    private static double speed = 18;
+    private static double turnSpeed = 6;
 
-    private static double separationStrength = 10;
-    private static double alignmentStrength = 5;
+    private static double separationConstant = 0.01;
+    private static double cohesionConstant = 0.2;
+
+    private static double separationStrength = 5;
+    private static double alignmentStrength = 100;
     private static double cohesionStrength = 10;
 
-    private static double viewDistance = 300;
+    private static double viewDistance = 50;
 
     private Vector2 position;
     public double rotation;
@@ -44,7 +47,7 @@ public class Bird {
     }
 
     public void draw(boolean showDebugAnnotations) {
-        Raylib.DrawPoly(position.toRaylibVector2(), 3, 15, (float)rotation, Colors.WHITE);
+        Raylib.DrawPoly(position.toRaylibVector2(), 3, 10, (float)rotation, Colors.WHITE);
 
         if (showDebugAnnotations) {
             // show movement direction
@@ -100,15 +103,12 @@ public class Bird {
     private double separtation(List<Bird> birds) {
         Vector2 totalRepulsiveForce = new Vector2();
         for (Bird b : birds) {
-            if (b == this) {
-                continue;
-            }
             Vector2 bToSelf = this.position.minus(b.position);
             double r = bToSelf.magnitude();
 
             bToSelf = bToSelf.normalize();
 
-            Vector2 repulsiveForce = bToSelf.times(1.0 / (r * r));
+            Vector2 repulsiveForce = bToSelf.times(separationConstant / r);
             totalRepulsiveForce = totalRepulsiveForce.plus(repulsiveForce);
         }
         if (totalRepulsiveForce.equals(new Vector2())) {
@@ -133,9 +133,14 @@ public class Bird {
         for (Bird b : birds) {
             avgPosition = avgPosition.plus(b.position);
         }
-        avgPosition = avgPosition.times(1.0 / birds.size());
+        avgPosition = avgPosition.times(cohesionConstant / birds.size());
 
-        double angleRadians = Math.atan2(avgPosition.y() - position.y(), avgPosition.x() - position.x());
+        Vector2 attractiveForce = avgPosition.minus(this.position);
+        double r = attractiveForce.magnitude();
+        attractiveForce = attractiveForce.normalize();
+        attractiveForce = attractiveForce.times(1.0 / (r * r));
+
+        double angleRadians = attractiveForce.angleWith(new Vector2(1.0, 0.0));
 
         return angleRadians * 180.0 / Math.PI;
     }
