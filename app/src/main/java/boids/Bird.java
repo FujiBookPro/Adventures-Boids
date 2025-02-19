@@ -7,6 +7,7 @@ import boids.Vector.Vector2;
 import com.raylib.Colors;
 
 import java.lang.Math;
+import java.util.ArrayList;
 import java.util.List;
 
 public class Bird {
@@ -15,7 +16,9 @@ public class Bird {
 
     private static double separationStrength = 10;
     private static double alignmentStrength = 5;
-    private static double cohesionStrength = 5;
+    private static double cohesionStrength = 10;
+
+    private static double viewDistance = 300;
 
     private Vector2 position;
     public double rotation;
@@ -49,13 +52,25 @@ public class Bird {
             float nextX = (float)(position.x() + Math.cos(rotation * Math.PI / 180) * 50);
             float nextY = (float)(position.y() + Math.sin(rotation * Math.PI / 180) * 50);
             Raylib.DrawLineV(position.toRaylibVector2(), new Raylib.Vector2().x(nextX).y(nextY), Colors.GREEN);
+            // show view distance
+            Raylib.DrawCircleLinesV(position.toRaylibVector2(), (float)viewDistance, Colors.BLUE);
         }
     }
 
     public void update(List<Bird> allBirds) {
-        double desiredRotation = separtation(allBirds) * separationStrength;
-        desiredRotation += alignment(allBirds) * alignmentStrength;
-        desiredRotation += cohesion(allBirds) * cohesionStrength;
+        List<Bird> visibleBirds = new ArrayList<>();
+        for (Bird b : allBirds) {
+            if (b == this) {
+                continue;
+            }
+            if (this.position.minus(b.position).magnitude() < viewDistance) {
+                visibleBirds.add(b);
+            }
+        }
+
+        double desiredRotation = separtation(visibleBirds) * separationStrength;
+        desiredRotation += alignment(visibleBirds) * alignmentStrength;
+        desiredRotation += cohesion(visibleBirds) * cohesionStrength;
         desiredRotation /= separationStrength + alignmentStrength + cohesionStrength;
 
         if (rotation > desiredRotation) {
@@ -95,6 +110,9 @@ public class Bird {
 
             Vector2 repulsiveForce = bToSelf.times(1.0 / (r * r));
             totalRepulsiveForce = totalRepulsiveForce.plus(repulsiveForce);
+        }
+        if (totalRepulsiveForce.equals(new Vector2())) {
+            return this.rotation;
         }
         double angleRadians = totalRepulsiveForce.angleWith(new Vector2(1.0, 0.0));
 
