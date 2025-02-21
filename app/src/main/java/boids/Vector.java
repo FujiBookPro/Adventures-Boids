@@ -11,6 +11,10 @@ public class Vector {
             this(0, 0);
         }
 
+        public static Vector2 unitVector(double angle) {
+            return new Vector2(Math.cos(angle), Math.sin(angle));
+        }
+
         public Raylib.Vector2 toRaylibVector2() {
             return new Raylib.Vector2().x((float)this.x).y((float)this.y);
         }

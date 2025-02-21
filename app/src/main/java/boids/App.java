@@ -26,6 +26,7 @@ public class App {
         Raylib.SetTargetFPS(30);
 
         boolean debugEnabled = false;
+        boolean paused = false;
 
         List<Bird> birds = initEnvironment();
 
@@ -38,6 +39,16 @@ public class App {
             if (Raylib.IsKeyPressed(Raylib.KEY_D)) {
                 debugEnabled = !debugEnabled;
             }
+            // pause simulation with p
+            if (Raylib.IsKeyPressed(Raylib.KEY_P)) {
+                paused = !paused;
+            }
+            // step simulation with n
+            if (Raylib.IsKeyDown(Raylib.KEY_N) && paused) {
+                for (Bird b : birds) {
+                    b.update(birds);
+                }
+            }
             // spawn new birds with mouse click
             if (Raylib.IsMouseButtonDown(Raylib.MOUSE_BUTTON_LEFT)) {
                 birds.add(new Bird(new Vector2(Raylib.GetMouseX(), Raylib.GetMouseY())));
@@ -48,7 +59,9 @@ public class App {
             Raylib.ClearBackground(Colors.BLACK);
 
             for (Bird b : birds) {
-                b.update(birds);
+                if (!paused) {
+                    b.update(birds);
+                }
                 b.draw(debugEnabled);
             }
 

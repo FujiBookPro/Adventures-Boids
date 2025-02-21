@@ -12,7 +12,7 @@ import java.util.List;
 
 public class Bird {
     private static double speed = 18;
-    private static double turnSpeed = 6;
+    private static double turnSpeed = .1;
 
     private static double separationConstant = 0.01;
     private static double cohesionConstant = 0.2;
@@ -25,10 +25,12 @@ public class Bird {
 
     private Vector2 position;
     public double rotation;
+    public double desiredRotation;
 
     public Bird(Vector2 startPosition, double startRotation) {
         position = startPosition;
         rotation = startRotation;
+        desiredRotation = startRotation;
     }
 
     public Bird(Vector2 startPosition) {
@@ -37,7 +39,7 @@ public class Bird {
 
     public static Bird random(int width, int height) {
         Vector2 position = new Vector2(Math.random() * width, Math.random() * height);
-        double rotation = Math.random() * 360;
+        double rotation = Math.random() * Math.PI * 2;
 
         return new Bird(position, rotation);
     }
@@ -47,31 +49,24 @@ public class Bird {
     }
 
     public void draw(boolean showDebugAnnotations) {
-        Raylib.DrawPoly(position.toRaylibVector2(), 3, 10, (float)rotation, Colors.WHITE);
+        Raylib.DrawPoly(position.toRaylibVector2(), 3, 10, (float)(rotation * 180.0 / Math.PI), Colors.WHITE);
 
         if (showDebugAnnotations) {
             // show movement direction
-            // TODO: Make this code (and the main movement code) less redundant
-            float nextX = (float)(position.x() + Math.cos(rotation * Math.PI / 180) * 50);
-            float nextY = (float)(position.y() + Math.sin(rotation * Math.PI / 180) * 50);
-            Raylib.DrawLineV(position.toRaylibVector2(), new Raylib.Vector2().x(nextX).y(nextY), Colors.GREEN);
+            Vector2 rotationIndicator = position.plus(Vector2.unitVector(rotation).times(50));
+            Raylib.DrawLineV(position.toRaylibVector2(), rotationIndicator.toRaylibVector2(), Colors.GREEN);
+            // show desired rotation
+            Vector2 desireIndicator = position.plus(Vector2.unitVector(desiredRotation).times(50));
+            Raylib.DrawLineV(position.toRaylibVector2(), desireIndicator.toRaylibVector2(), Colors.PURPLE);
             // show view distance
             Raylib.DrawCircleLinesV(position.toRaylibVector2(), (float)viewDistance, Colors.BLUE);
         }
     }
 
     public void update(List<Bird> allBirds) {
-        List<Bird> visibleBirds = new ArrayList<>();
-        for (Bird b : allBirds) {
-            if (b == this) {
-                continue;
-            }
-            if (this.position.minus(b.position).magnitude() < viewDistance) {
-                visibleBirds.add(b);
-            }
-        }
+        List<Bird> visibleBirds = findVisibleBirds(allBirds);
 
-        double desiredRotation = separtation(visibleBirds) * separationStrength;
+        desiredRotation = separtation(visibleBirds) * separationStrength;
         desiredRotation += alignment(visibleBirds) * alignmentStrength;
         desiredRotation += cohesion(visibleBirds) * cohesionStrength;
         desiredRotation /= separationStrength + alignmentStrength + cohesionStrength;
@@ -82,8 +77,10 @@ public class Bird {
             rotation += Math.min(turnSpeed, desiredRotation - rotation);
         }
 
-        double newX = position.x() + Math.cos(rotation * Math.PI / 180) * speed;
-        double newY = position.y() + Math.sin(rotation * Math.PI / 180) * speed;
+        rotation %= 2 * Math.PI;
+
+        double newX = position.x() + Math.cos(rotation) * speed;
+        double newY = position.y() + Math.sin(rotation) * speed;
 
         if (newX > App.WIDTH) {
             newX %= App.WIDTH;
@@ -98,6 +95,24 @@ public class Bird {
         }
 
         position = new Vector2(newX, newY);
+    }
+
+    private List<Bird> findVisibleBirds(List<Bird> birds) {
+        List<Bird> visibleBirds = new ArrayList<>();
+        for (Bird b : birds) {
+            if (b == this) {
+                continue;
+            }
+
+            Vector2 thisToOther = b.position.minus(this.position);
+            Vector2 forward = Vector2.unitVector(rotation);
+
+            if (thisToOther.magnitude() < viewDistance) {
+                visibleBirds.add(b);
+            }
+        }
+
+        return visibleBirds;
     }
 
     private double separtation(List<Bird> birds) {
@@ -116,15 +131,18 @@ public class Bird {
         }
         double angleRadians = totalRepulsiveForce.angleWith(new Vector2(1.0, 0.0));
 
-        return angleRadians * 180.0 / Math.PI;
+        return angleRadians;
     }
 
     private double alignment(List<Bird> birds) {
-        double avgRotation = 0;
+        // use circular mean to correctly calculate average angle
+        double avgCos = Math.cos(rotation);
+        double avgSin = Math.sin(rotation);
         for (Bird b : birds) {
-            avgRotation += b.rotation;
+            avgCos += Math.cos(b.rotation);
+            avgSin += Math.sin(b.rotation);
         }
-        avgRotation /= birds.size();
+        double avgRotation = Math.atan2(avgSin, avgCos);
         return avgRotation;
     }
 
@@ -142,6 +160,6 @@ public class Bird {
 
         double angleRadians = attractiveForce.angleWith(new Vector2(1.0, 0.0));
 
-        return angleRadians * 180.0 / Math.PI;
+        return angleRadians;
     }
 }
