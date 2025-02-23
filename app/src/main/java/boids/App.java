@@ -15,7 +15,7 @@ public class App {
 
     private static List<Bird> initEnvironment() {
         List<Bird> birds = new ArrayList<Bird>();
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 200; i++) {
             birds.add(Bird.random(WIDTH, HEIGHT));
         }
         return birds;

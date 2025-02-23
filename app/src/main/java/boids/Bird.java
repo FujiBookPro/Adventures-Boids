@@ -22,6 +22,7 @@ public class Bird {
     private static double cohesionStrength = 10;
 
     private static double viewDistance = 50;
+    private static double viewAngle = Math.PI * 1.7;
 
     private Vector2 position;
     private double rotation;
@@ -60,6 +61,10 @@ public class Bird {
             Raylib.DrawLineV(position.toRaylibVector2(), desireIndicator.toRaylibVector2(), Colors.PURPLE);
             // show view distance
             Raylib.DrawCircleLinesV(position.toRaylibVector2(), (float)viewDistance, Colors.BLUE);
+            Vector2 angleIndicator1 = position.plus(Vector2.unitVector(rotation + viewAngle / 2).times(viewDistance));
+            Vector2 angleIndicator2 = position.plus(Vector2.unitVector(rotation - viewAngle / 2).times(viewDistance));
+            Raylib.DrawLineV(position.toRaylibVector2(), angleIndicator1.toRaylibVector2(), Colors.BLUE);
+            Raylib.DrawLineV(position.toRaylibVector2(), angleIndicator2.toRaylibVector2(), Colors.BLUE);
         }
     }
 
@@ -107,7 +112,7 @@ public class Bird {
             Vector2 thisToOther = b.position.minus(this.position);
             Vector2 forward = Vector2.unitVector(rotation);
 
-            if (thisToOther.magnitude() < viewDistance) {
+            if (thisToOther.magnitude() < viewDistance && thisToOther.angleWith(forward) < viewAngle / 2) {
                 visibleBirds.add(b);
             }
         }
